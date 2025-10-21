@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Porteira">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Controle de Porteira</title>
+    
+    <!-- Manifest PWA -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Ícones -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚪</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text y='.7em' x='50%' font-size='60' text-anchor='middle' fill='white'>🚪</text></svg>">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 10;
+        }
+
+        .app-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #667eea;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:active {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .content-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 30px 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+        }
+
+        .login-container {
+            min-height: calc(100vh - 40px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #667eea;
+            margin: 25px 0 15px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .user-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .user-card .user-email {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            background: white;
+        }
+
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            padding: 20px;
+            font-size: 18px;
+        }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feedback.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+            display: block;
+        }
+
+        .feedback.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+            display: block;
+        }
+
+        .feedback.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            animation: spin 1s linear infinite;
+            margin: 15px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner.active {
+            display: block;
+        }
+
+        .log-container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .log-table {
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .log-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .log-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px 10px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .log-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+
+        .log-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .log-table tbody {
+            display: block;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-table thead, .log-table tbody tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-denied {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .install-prompt {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 20px;
+            margin: 15px;
+            border-radius: 15px;
+            display: none;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .install-prompt.show {
+            display: flex;
+        }
+
+        .install-text {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .install-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .close-install {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #999;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+
+        /* Esconder scrollbar mas manter funcionalidade */
+        .log-table tbody::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .log-table tbody::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .log-table tbody::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Tela de Login -->
+    <div id="loginScreen" class="content-wrapper login-container">
+        <div class="container">
+            <h1>🔐 Controle de Porteira</h1>
+            <form onsubmit="realizarLogin(event)">
+                <div class="form-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary">Entrar</button>
+            </form>
+            <div class="feedback" id="loginFeedback"></div>
+        </div>
+    </div>
+
+    <!-- Tela Principal do App -->
+    <div id="appScreen" style="display: none; height: 100%; display: flex; flex-direction: column;">
+        <div class="app-header">
+            <div class="app-title">
+                <span>🚪</span>
+                <span>Porteira</span>
+            </div>
+            <button class="logout-btn" onclick="logout()">Sair</button>
+        </div>
+
+        <div class="content-wrapper">
+            <!-- Prompt de instalação -->
+            <div class="install-prompt" id="installPrompt">
+                <div class="install-text">
+                    <strong>Instalar App</strong><br>
+                    Adicione à tela inicial para acesso rápido
+                </div>
+                <button class="install-btn" id="installBtn">Instalar</button>
+                <button class="close-install" onclick="closeInstallPrompt()">×</button>
+            </div>
+
+            <div class="container">
+                <div class="user-card" id="userCard">
+                    <div style="font-size: 16px; font-weight: 600;">Bem-vindo!</div>
+                    <div class="user-email" id="userEmail"></div>
+                </div>
+
+                <button class="btn btn-primary" id="btnPorteira" onclick="abrirPorteira()">
+                    🚪 Abrir Porteira
+                </button>
+                <div class="spinner" id="spinner"></div>
+                <div class="feedback" id="feedback"></div>
+            </div>
+
+            <div id="logSection" style="display: none;" class="log-container">
+                <h2>📋 Histórico de Acessos</h2>
+                <div class="log-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 30%;">Usuário</th>
+                                <th style="width: 45%;">Data/Hora</th>
+                                <th style="width: 25%;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTableBody">
+                            <tr><td colspan="3" style="text-align:center; color:#999; padding: 20px;">Carregando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // ⚠️ CONFIGURE AQUI AS CREDENCIAIS DO SEU FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJtLBs9qCQgDhIOs4SlAyjrY-0VtM0pZk",
+            authDomain: "controle-porteira.firebaseapp.com",
+            projectId: "controle-porteira",
+            storageBucket: "controle-porteira.firebasestorage.app", 
+            messagingSenderId: "592020605883",
+            appId: "1:592020605883:web:9442881845c57194cc129e"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let webhookUrl = null;
+        let permissoesUsuario = null;
+        let usuarioAtual = null;
+        let deferredPrompt = null;
+
+        // Buscar webhook URL do Firestore
+        async function carregarWebhookUrl() {
+            try {
+                const configDoc = await getDoc(doc(db, 'configuracoes', 'webhook'));
+                if (configDoc.exists()) {
+                    webhookUrl = configDoc.data().url;
+                } else {
+                    console.error('Configuração do webhook não encontrada');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar webhook:', error);
+            }
+        }
+
+        // Buscar permissões do usuário
+        async function carregarPermissoesUsuario() {
+            try {
+                const permDoc = await getDoc(doc(db, 'usuarios_permissoes', usuarioAtual.email));
+                if (permDoc.exists()) {
+                    permissoesUsuario = permDoc.data();
+                } else {
+                    // Se não existe permissão cadastrada, negar acesso por padrão
+                    permissoesUsuario = { acessoNegado: true };
+                    console.warn('Permissões não encontradas para:', usuarioAtual.email);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar permissões:', error);
+                permissoesUsuario = { acessoNegado: true };
+            }
+        }
+
+        // PWA - Registrar Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registrado'))
+                    .catch(err => console.log('Erro no Service Worker:', err));
+            });
+        }
+
+        // PWA - Detectar possibilidade de instalação
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installPrompt').classList.add('show');
+        });
+
+        window.installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                document.getElementById('installPrompt').classList.remove('show');
+            }
+        });
+
+        window.closeInstallPrompt = function() {
+            document.getElementById('installPrompt').classList.remove('show');
+        };
+
+        // Monitorar estado de autenticação
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                usuarioAtual = user;
+                await carregarWebhookUrl();
+                await carregarPermissoesUsuario();
+                mostrarTelaApp();
+            } else {
+                mostrarTelaLogin();
+            }
+        });
+
+        // Função de Login
+        window.realizarLogin = async function(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginFeedback = document.getElementById('loginFeedback');
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                loginFeedback.className = 'feedback error';
+                
+                if (error.code === 'auth/invalid-credential') {
+                    loginFeedback.textContent = '❌ E-mail ou senha incorretos!';
+                } else if (error.code === 'auth/too-many-requests') {
+                    loginFeedback.textContent = '❌ Muitas tentativas. Tente novamente mais tarde.';
+                } else {
+                    loginFeedback.textContent = '❌ Erro ao fazer login: ' + error.message;
+                }
+                
+                setTimeout(() => {
+                    loginFeedback.style.display = 'none';
+                }, 5000);
+            }
+        };
+
+        // Função de Logout
+        window.logout = async function() {
+            await signOut(auth);
+        };
+
+        function mostrarTelaLogin() {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('appScreen').style.display = 'none';
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        function mostrarTelaApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appScreen').style.display = 'flex';
+            
+            const nomeUsuario = usuarioAtual.email.split('@')[0];
+            document.getElementById('userEmail').textContent = usuarioAtual.email;
+            
+            // Mostrar histórico apenas para admin
+            if (usuarioAtual.email === 'admin@admin.com') {
+                document.getElementById('logSection').style.display = 'block';
+                carregarLogs();
+            } else {
+                document.getElementById('logSection').style.display = 'none';
+            }
+        }
+
+        function verificarAcessoAdmin() {
+            // Se usuário tem acesso total
+            if (permissoesUsuario.acessoTotal === true) {
+                return { permitido: true, motivo: '' };
+            }
+
+            // Se usuário tem acesso explicitamente negado ou sem permissões
+            if (permissoesUsuario.acessoNegado === true || !permissoesUsuario.diasPermitidos) {
+                return { 
+                    permitido: false, 
+                    motivo: 'Você não tem permissão para abrir a porteira.' 
+                };
+            }
+
+            // Verificar dia e horário
+            const agora = new Date();
+            const diaSemana = agora.getDay();
+            const hora = agora.getHours();
+            const minuto = agora.getMinutes();
+            const horaAtual = hora + (minuto / 60);
+
+            // Verificar se o dia da semana está permitido
+            if (!permissoesUsuario.diasPermitidos.includes(diaSemana)) {
+                const diasNomes = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+                const diasPermitidosNomes = permissoesUsuario.diasPermitidos.map(d => diasNomes[d]).join(', ');
+
+                const horaInicio = permissoesUsuario.horaInicio || 0;
+                const horaFim = permissoesUsuario.horaFim || 24;
+
+                return { 
+                    permitido: false, 
+                    motivo: `Acesso permitido apenas em: ${diasPermitidosNomes}. Horário permitido: ${horaInicio}h às ${horaFim}h.` 
+                };
+            }
+
+            // Verificar horário
+            const horaInicio = permissoesUsuario.horaInicio || 0;
+            const horaFim = permissoesUsuario.horaFim || 24;
+
+            if (horaAtual < horaInicio || horaAtual >= horaFim) {
+                return { 
+                    permitido: false, 
+                    motivo: `Horário permitido: ${horaInicio}h às ${horaFim}h.` 
+                };
+            }
+
+            return { permitido: true, motivo: '' };
+        }
+
+        // Registrar log no Firestore
+        async function registrarLog(status, motivo = '') {
+            try {
+                const nomeUsuario = usuarioAtual.email.split('@')[0];
+                await addDoc(collection(db, 'logs_acesso'), {
+                    usuario: nomeUsuario,
+                    email: usuarioAtual.email,
+                    status: status,
+                    motivo: motivo,
+                    timestamp: serverTimestamp()
+                });
+            } catch (error) {
+                console.error('Erro ao registrar log:', error);
+            }
+        }
+
+        // Carregar logs em tempo real
+        function carregarLogs() {
+            const q = query(
+                collection(db, 'logs_acesso'),
+                orderBy('timestamp', 'desc'),
+                limit(50)
+            );
+
+            onSnapshot(q, (snapshot) => {
+                const tbody = document.getElementById('logTableBody');
+                tbody.innerHTML = '';
+
+                if (snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#999; padding: 20px;">Nenhum registro ainda</td></tr>';
+                    return;
+                }
+
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const tr = document.createElement('tr');
+                    
+                    const dataHora = data.timestamp ? 
+                        new Date(data.timestamp.toDate()).toLocaleString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }) : 
+                        'Agora';
+                    
+                    const statusClass = data.status === 'sucesso' ? 'status-success' : 'status-denied';
+                    const statusText = data.status === 'sucesso' ? '✓ OK' : '✗ Negado';
+                    
+                    tr.innerHTML = `
+                        <td>${data.usuario}</td>
+                        <td>${dataHora}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        // Abrir Porteira
+        window.abrirPorteira = async function() {
+            const btn = document.getElementById('btnPorteira');
+            const feedback = document.getElementById('feedback');
+            const spinner = document.getElementById('spinner');
+
+            if (!webhookUrl) {
+                feedback.className = 'feedback error';
+                feedback.textContent = '❌ Configuração não carregada. Tente novamente.';
+                await carregarWebhookUrl();
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                }, 5000);
+                return;
+            }
+
+            if (!permissoesUsuario) {
+                feedback.className = 'feedback error';
+                feedback.textContent = '❌ Permissões não carregadas. Tente novamente.';
+                await carregarPermissoesUsuario();
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                }, 5000);
+                return;
+            }
+
+            const verificacao = verificarAcessoAdmin();
+            
+            if (!verificacao.permitido) {
+                feedback.className = 'feedback error';
+                feedback.textContent = `❌ Acesso negado! ${verificacao.motivo}`;
+                
+                await registrarLog('negado', verificacao.motivo);
+                
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                }, 5000);
+                return;
+            }
+
+            btn.disabled = true;
+            feedback.className = 'feedback loading';
+            feedback.textContent = 'Acionando porteira...';
+            spinner.classList.add('active');
+
+            try {
+                const nomeUsuario = usuarioAtual.email.split('@')[0];
+                const timestamp = new Date().toISOString();
+                const urlComParametros = `${webhookUrl}?value1=${nomeUsuario}&value2=${timestamp}`;
+                
+                await fetch(urlComParametros, {
+                    method: 'GET',
+                    mode: 'no-cors'
+                });
+
+                spinner.classList.remove('active');
+                feedback.className = 'feedback success';
+                feedback.textContent = '✅ Porteira aberta com sucesso!';
+                
+                await registrarLog('sucesso');
+                
+            } catch (error) {
+                spinner.classList.remove('active');
+                feedback.className = 'feedback error';
+                feedback.textContent = '❌ Erro de conexão. Verifique sua internet.';
+                
+                await registrarLog('negado', 'Erro de conexão');
+                
+                console.error('Erro:', error);
+            } finally {
+                btn.disabled = false;
+                
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                }, 5000);
+            }
+        };
+    </script>
+</body>
+</html>
